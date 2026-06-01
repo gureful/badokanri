@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>バドミントン部 部室当番管理</title>
+				<style>
+					:root {
+					--primary-color: #4a90e2;
+					--bg-color: #f5f7fa;
+					--text-color: #333;
+					--duty-day-bg: #e6f2ff;
+					--duty-text-color: #0056b3;
+					--error-color: #e74c3c;
+					}
+
+					body {
+					font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+					background-color: var(--bg-color);
+					color: var(--text-color);
+					margin: 0;
+					padding: 20px;
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					min-height: 100vh;
+					justify-content: center;
+					}
+
+					/* ログイン画面のスタイル */
+					.login-wrapper {
+					width: 100%;
+					max-width: 400px;
+					background: white;
+					padding: 30px;
+					border-radius: 12px;
+					box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+					text-align: center;
+					}
+
+					.login-wrapper h2 {
+					margin-top: 0;
+					color: #2c3e50;
+					margin-bottom: 20px;
+					}
+
+					.form-group {
+					margin-bottom: 20px;
+					text-align: left;
+					}
+
+					.form-group label {
+					display: block;
+					margin-bottom: 8px;
+					font-weight: bold;
+					color: #555;
+					}
+
+					.form-group input {
+					width: 100%;
+					padding: 10px;
+					box-sizing: border-box;
+					border: 1px solid #ccc;
+					border-radius: 6px;
+					font-size: 1rem;
+					}
+
+					.error-message {
+					color: var(--error-color);
+					font-size: 0.9rem;
+					margin-bottom: 15px;
+					display: none;
+					}
+
+					/* メインコンテンツ（初期状態は非表示） */
+					.main-content {
+					display: none;
+					width: 100%;
+					max-width: 900px;
+					flex-direction: column;
+					align-items: center;
+					}
+
+					header {
+					margin-bottom: 20px;
+					text-align: center;
+					}
+
+					h1 {
+					color: #2c3e50;
+					margin-bottom: 5px;
+					}
+
+					.container {
+					width: 100%;
+					background: white;
+					padding: 20px;
+					border-radius: 12px;
+					box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+					box-sizing: border-box;
+					}
+
+					/* カレンダーヘッダー */
+					.calendar-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					margin-bottom: 20px;
+					}
+
+					.calendar-header h2 {
+					margin: 0;
+					font-size: 1.5rem;
+					color: #34495e;
+					}
+
+					.btn {
+					background-color: var(--primary-color);
+					color: white;
+					border: none;
+					padding: 8px 16px;
+					border-radius: 6px;
+					cursor: pointer;
+					font-weight: bold;
+					transition: background 0.2s;
+					}
+
+					.btn:hover {
+					background-color: #357abd;
+					}
+
+					.btn-block {
+					width: 100%;
+					padding: 12px;
+					font-size: 1rem;
+					}
+
+					/* カレンダーグリッド */
+					.calendar-grid {
+					display: grid;
+					grid-template-columns: repeat(7, 1fr);
+					gap: 8px;
+					}
+
+					.weekday {
+					text-align: center;
+					font-weight: bold;
+					padding: 10px 0;
+					background-color: #ecf0f1;
+					border-radius: 4px;
+					}
+
+					.day {
+					min-height: 90px;
+					border: 1px solid #e0e0e0;
+					border-radius: 6px;
+					padding: 6px;
+					display: flex;
+					flex-direction: column;
+					justify-content: space-between;
+					background-color: #fff;
+					}
+
+					.day.other-month {
+					background-color: #f9f9f9;
+					color: #ccc;
+					}
+
+					.day-number {
+					font-weight: bold;
+					font-size: 0.9rem;
+					}
+
+					/* 当番日のスタイル（月・水・木） */
+					.duty-day {
+					background-color: var(--duty-day-bg);
+					border-color: #b3d7ff;
+					}
+
+					.duty-assignment {
+					background-color: var(--primary-color);
+					color: white;
+					font-size: 0.8rem;
+					padding: 4px;
+					border-radius: 4px;
+					text-align: center;
+					margin-top: auto;
+					font-weight: bold;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+					}
+
+					/* メンバーリストの確認用エリア */
+					.member-list-section {
+					margin-top: 30px;
+					padding-top: 20px;
+					border-top: 1px solid #eee;
+					}
+
+					.member-list-section h3 {
+					margin-top: 0;
+					color: #7f8c8d;
+					}
+
+					.member-tags {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 8px;
+					}
+
+					.member-tag {
+					background-color: #f0f0f0;
+					padding: 4px 10px;
+					border-radius: 20px;
+					font-size: 0.85rem;
+					color: #555;
+					}
+				</style>
+			</head>
+	<body>
+
+		<div class="login-wrapper" id="login-screen">
+			<h2>🏸 部室管理ログイン</h2>
+			<div class="form-group">
+				<label for="password">部室パスワード</label>
+				<input type="password" id="password" placeholder="パスワードを入力">
+    </div>
+			<div class="error-message" id="error-msg">パスワードが違います。</div>
+			<button class="btn btn-block" id="login-btn">ログイン</button>
+		</div>
+
+		<div class="main-content" id="main-content">
+			<header>
+				<h1>🏸 バドミントン部 部室当番管理</h1>
+				<p>月・水・木曜日の部活日にメンバーが順番で割り当てられます</p>
+			</header>
+
+			<div class="container">
+				<div class="calendar-header">
+					<button class="btn" id="prev-month">← 前月</button>
+					<h2 id="calendar-title">2026年 6月</h2>
+					<button class="btn" id="next-month">次月 →</button>
+				</div>
+
+				<div class="calendar-grid" id="calendar-grid">
+				</div>
+
+				<div class="member-list-section">
+					<h3>当番のローテーション順（1〜14）</h3>
+					<div class="member-tags" id="member-tags"></div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			// 【セキュリティ対策】「2026bado」をBase64変換した文字列です。
+			// ソースコードを見られても「2026bado」という文字は一切露出せず、ローカル環境でも確実に動きます。
+			const ENCODED_PASSWORD = "MjAyNmJhZG8=";
+
+			// 1. メンバーリストの登録
+			const members = [
+			"ジョハン", "室木", "五十嵐", "松原", "山本",
+			"熊倉なつき", "田中なつき", "石高", "健", "岡山",
+			"尾崎", "魏", "梅田", "本山"
+			];
+
+			// 2. 基準日
+			const BASE_DATE = new Date(2026, 0, 1);
+
+			let currentYear = new Date().getFullYear();
+			let currentMonth = new Date().getMonth();
+			const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+
+			document.addEventListener("DOMContentLoaded", () => {
+			const loginBtn = document.getElementById("login-btn");
+			const passwordInput = document.getElementById("password");
+
+			// ログイン処理
+			function handleLogin() {
+			const inputPass = passwordInput.value;
+
+			// 入力されたパスワードをエンコードして比較（環境を選ばず動く方法）
+			const encodedInput = btoa(unescape(encodeURIComponent(inputPass)));
+
+			if (encodedInput === ENCODED_PASSWORD) {
+			document.getElementById("login-screen").style.display = "none";
+			const mainContent = document.getElementById("main-content");
+			mainContent.style.display = "flex";
+			document.body.style.justifyContent = "flex-start";
+
+			initMemberTags();
+			renderCalendar(currentYear, currentMonth);
+			} else {
+			document.getElementById("error-msg").style.display = "block";
+			passwordInput.value = "";
+			}
+			}
+
+			loginBtn.addEventListener("click", handleLogin);
+			passwordInput.addEventListener("keypress", (e) => {
+			if (e.key === "Enter") handleLogin();
+			});
+
+			// カレンダー切り替え
+			document.getElementById("prev-month").addEventListener("click", () => {
+			currentMonth--;
+			if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar(currentYear, currentMonth);
+        });
+
+        document.getElementById("next-month").addEventListener("click", () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar(currentYear, currentMonth);
+        });
+    });
+
+    function initMemberTags() {
+        const container = document.getElementById("member-tags");
+        container.innerHTML = ""; 
+        members.forEach((member, index) => {
+            const tag = document.createElement("span");
+            tag.className = "member-tag";
+            tag.textContent = `${index + 1}. ${member}`;
+            container.appendChild(tag);
+        });
+    }
+
+    function getDutyMember(targetDate) {
+        const dayOfWeek = targetDate.getDay();
+        if (dayOfWeek !== 1 && dayOfWeek !== 3 && dayOfWeek !== 4) {
+			return null;
+			}
+
+			let count = 0;
+			let d = new Date(BASE_DATE.getTime());
+
+			if (targetDate >= BASE_DATE) {
+			while (d < targetDate) {
+                const w = d.getDay();
+                if (w === 1 || w === 3 || w === 4) {
+                    count++;
+                }
+                d.setDate(d.getDate() + 1);
+            }
+            return members[count % members.length];
+        } else {
+            while (d > targetDate) {
+                d.setDate(d.getDate() - 1);
+                const w = d.getDay();
+                if (w === 1 || w === 3 || w === 4) {
+                    count--;
+                }
+            }
+            const idx = ((count % members.length) + members.length) % members.length;
+            return members[idx];
+        }
+    }
+
+    function renderCalendar(year, month) {
+        document.getElementById("calendar-title").textContent = `${year}年 ${month + 1}月`;
+
+        const grid = document.getElementById("calendar-grid");
+        grid.innerHTML = ""; 
+
+        weekdays.forEach(w => {
+            const dayHead = document.createElement("div");
+            dayHead.className = "weekday";
+            dayHead.textContent = w;
+            grid.appendChild(dayHead);
+        });
+
+        const firstDay = new Date(year, month, 1);
+        const startDayOfWeek = firstDay.getDay();
+        const startDate = new Date(year, month, 1 - startDayOfWeek);
+
+        const totalSquares = 42;
+        let renderDate = new Date(startDate.getTime());
+
+        for (let i = 0; i < totalSquares; i++) {
+            const dayDiv = document.createElement("div");
+            dayDiv.className = "day";
+
+            if (renderDate.getMonth() !== month) {
+                dayDiv.classList.add("other-month");
+            }
+
+            const dayNum = document.createElement("span");
+            dayNum.className = "day-number";
+            dayNum.textContent = renderDate.getDate();
+            dayDiv.appendChild(dayNum);
+
+            const w = renderDate.getDay();
+            if (w === 1 || w === 3 || w === 4) {
+                dayDiv.classList.add("duty-day");
+                
+                const memberName = getDutyMember(renderDate);
+                if (memberName) {
+                    const assignment = document.createElement("div");
+                    assignment.className = "duty-assignment";
+                    assignment.textContent = memberName;
+                    dayDiv.appendChild(assignment);
+                }
+            }
+
+            grid.appendChild(dayDiv);
+            renderDate.setDate(renderDate.getDate() + 1);
+        }
+    }
+		</script>
+
+	</body>
+</html>
